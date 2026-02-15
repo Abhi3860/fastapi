@@ -3,6 +3,9 @@ from fastapi import FastAPI, Response,status,HTTPException
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
+import psycopg
+
+
 
 app = FastAPI()
 
@@ -15,8 +18,14 @@ class Post(BaseModel):
     title: str
     content: str
     published: bool = True #defaults to 'true' if value is not provided
-    rating: Optional[int] = None #fully optional field, defaults to 'none'
 
+try:
+    conn = psycopg.connect(host='localhost', database='fastapi', user='postgres', password='Hellrider3860', cursor_factory=psycopg.rows.dict_row)   
+    cursor =conn.cursor()
+    print("database connection successful")
+except Exception as error:
+    print("database connection failed")
+    print("Error:", error)
 
 my_posts = [{"title":"example post","content":"example content","id":1},{"title":"Food, Wonderful Food","Content":"Food is good","id":2}]
 
