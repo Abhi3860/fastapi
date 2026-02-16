@@ -1,19 +1,36 @@
 import time
 from typing import Optional
-from fastapi import FastAPI, Response,status,HTTPException
+from fastapi import FastAPI, Response,status,HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
 import psycopg
 from psycopg.rows import dict_row
+from . import models
+from .database import engine
+from sqlmodel import Session
+from sqlmodel import SQLModel
 
-
+SQLModel.metadata.create_all(engine)
 app = FastAPI()
+
+#dependency
+def get_db():
+    with Session(engine) as session:
+        yield session
+
 
 @app.get("/")
 def get_user(): #normal python function
     return {"message": "Hello World"} #this gets sent back to the user, also this a dictionary
 #the dictionary is converted to json
+
+@app.get("/alchemy")
+def test_post(db: Session = Depends(get_db)):
+    return{"status":"Success"}
+
+
+
 
 class Post(BaseModel):
     title: str
