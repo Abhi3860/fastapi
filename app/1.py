@@ -7,17 +7,16 @@ from random import randrange
 import psycopg
 from psycopg.rows import dict_row
 from . import models
-from .database import engine
+from .database import engine, get_db
 from sqlmodel import Session
 from sqlmodel import SQLModel
+from sqlmodel import select
+
 
 SQLModel.metadata.create_all(engine)
 app = FastAPI()
 
-#dependency
-def get_db():
-    with Session(engine) as session:
-        yield session
+
 
 
 @app.get("/")
@@ -27,7 +26,9 @@ def get_user(): #normal python function
 
 @app.get("/alchemy")
 def test_post(db: Session = Depends(get_db)):
-    return{"status":"Success"}
+
+    posts = db.exec(select(models.Post)).all()
+    return{"data": posts}
 
 
 
