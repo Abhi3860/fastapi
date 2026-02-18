@@ -52,9 +52,12 @@ while True:
 my_posts = [{"title":"example post","content":"example content","id":1},{"title":"Food, Wonderful Food","Content":"Food is good","id":2}]
 
 @app.get("/posts")
-def get_posts():
-    cursor.execute("""SELECT * FROM posts""")
-    posts = cursor.fetchall()
+def get_posts(db: Session = Depends(get_db)):
+    #cursor.execute("""SELECT * FROM posts""")
+    #posts = cursor.fetchall()
+
+    posts = db.exec(select(models.Post)).all()
+
     return {"data":posts}
 
 def find_post(id):
@@ -69,10 +72,16 @@ def find_index_post(id):
 
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_posts(post: Post):
-    cursor.execute("""INSERT INTO posts (name, content, published) VALUES (%s,%s,%s) RETURNING *""", (post.title, post.content, post.published))
-    new_post = cursor.fetchone()
-    conn.commit()
+def create_posts(post: Post, db: Session = Depends(get_db)):
+    #cursor.execute("""INSERT INTO posts (name, content, published) VALUES (%s,%s,%s) RETURNING *""", (post.title, post.content, post.published))
+    #new_post = cursor.fetchone()
+    #conn.commit()
+    new_post=models.Post(**post.model_dump())
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+
     return {"data": new_post}
 
 @app.get("/posts/{id}") #{id} is called a path parameter
