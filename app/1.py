@@ -85,9 +85,11 @@ def create_posts(post: Post, db: Session = Depends(get_db)):
     return {"data": new_post}
 
 @app.get("/posts/{id}") #{id} is called a path parameter
-def get_post(id: int, response: Response):
-    cursor.execute("""SELECT * FROM posts WHERE id = %s""",(str(id),))
-    post = cursor.fetchone()
+def get_post(id: int, response: Response,db: Session = Depends(get_db)):
+    #cursor.execute("""SELECT * FROM posts WHERE id = %s""",(str(id),))
+    #post = cursor.fetchone()
+    post = db.exec(select(models.Post).where(models.Post.id == id)).first()
+    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id {id} was not found")
         #response.status_code = status.HTTP_404_NOT_FOUND
@@ -98,24 +100,42 @@ def get_post(id: int, response: Response):
     }
 
 @app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int):
+def delete_post(id: int, db: Session = Depends(get_db)):
     
-    cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""",(str(id),))
-    deleted_post = cursor.fetchone()
-    conn.commit()
-    if deleted_post == None:
+    #cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""",(str(id),))
+    #deleted_post = cursor.fetchone()
+    #conn.commit()
+    deleted_post = db.exec(select(models.Post).where(models.Post.id == id))
+    result = deleted_post.first()
+
+
+    if result == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
-    
+    db.delete(result)
+    db.commit()
+
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 @app.put("/posts/{id}")
-def create_post(id:int, post: Post):
-    cursor.execute("""UPDATE posts SET name = %s, content=%s, published=%s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
-    updated_post = cursor.fetchone()
-    conn.commit()
+def create_post(id:int, post: Post, db: Session = Depends(get_db)):
+    #cursor.execute("""UPDATE posts SET name = %s, content=%s, published=%s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
+    #updated_post = cursor.fetchone()
+    #conn.commit()
+    updated_post = db.exec(select(models.Post).where(models.Post.id == id)).first()
+    u_post_data= post.model_dump(exclude_unset=True)
+
     if updated_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
     
+    for key,value in u_post_data.items():
+        setattr(updated_post, key, value)
+    
+    db.add(updated_post)
+    db.commit()
+    db.refresh(updated_post)
+
+
+
     return {"data": updated_post}
 
