@@ -140,3 +140,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
     return new_user
+
+@app.get("/users/{id}", response_model=schemas.UserOut)
+def get_user(id:int, db: Session = Depends(get_db) ):
+    user = db.exec(select(models.User).where(models.User.id == id)).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with {id} does not exist")
+    return user
