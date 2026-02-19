@@ -3,14 +3,17 @@ from typing import Optional, List
 from fastapi import FastAPI, Response,status,HTTPException, Depends
 from fastapi.params import Body
 from pydantic import BaseModel
+
 from random import randrange
 import psycopg
 from psycopg.rows import dict_row
-from . import models, schemas
+from . import models, schemas, utils
 from .database import engine, get_db
 from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import select
+
+
 
 
 SQLModel.metadata.create_all(engine)
@@ -126,6 +129,10 @@ def create_post(id:int, post: schemas.PostCreate, db: Session = Depends(get_db))
 
 @app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    #hash the password
+    hashed_password = utils.hash(user.password)
+    user.password = hashed_password
+    
     new_user=models.User(**user.model_dump())
     db.add(new_user)
     db.commit()
