@@ -12,7 +12,7 @@ from .database import engine, get_db
 from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import select
-
+from .routers import post,user
 
 
 
@@ -20,7 +20,8 @@ SQLModel.metadata.create_all(engine)
 app = FastAPI()
 
 
-
+app.include_router(post.router)
+app.include_router(user.router)
 
 @app.get("/")
 def get_user(): #normal python function
@@ -41,110 +42,6 @@ while True:
 
 my_posts = [{"title":"example post","content":"example content","id":1},{"title":"Food, Wonderful Food","Content":"Food is good","id":2}]
 
-@app.get("/posts", response_model=List[schemas.Post])
-def get_posts(db: Session = Depends(get_db)):
-    #cursor.execute("""SELECT * FROM posts""")
-    #posts = cursor.fetchall()
-
-    posts = db.exec(select(models.Post)).all()
-
-    return posts
-
-def find_post(id):
-    for p in my_posts:
-        if p['id']==id:
-            return p
-        
-def find_index_post(id):
-    for i,p in enumerate(my_posts):
-        if p['id'] == id:
-            return i
-
-
-@app.post("/posts", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
-def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db)):
-    #cursor.execute("""INSERT INTO posts (name, content, published) VALUES (%s,%s,%s) RETURNING *""", (post.title, post.content, post.published))
-    #new_post = cursor.fetchone()
-    #conn.commit()
-    new_post=models.Post(**post.model_dump())
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-
-
-    return new_post
-
-@app.get("/posts/{id}", response_model=schemas.Post) #{id} is called a path parameter
-def get_post(id: int, response: Response,db: Session = Depends(get_db)):
-    #cursor.execute("""SELECT * FROM posts WHERE id = %s""",(str(id),))
-    #post = cursor.fetchone()
-    post = db.exec(select(models.Post).where(models.Post.id == id)).first()
-    
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id {id} was not found")
-        #response.status_code = status.HTTP_404_NOT_FOUND
-        #return {"message":f"Post with id {id} was not found"}
-    
-    return post
-
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id: int, db: Session = Depends(get_db)):
-    
-    #cursor.execute("""DELETE FROM posts WHERE id = %s RETURNING *""",(str(id),))
-    #deleted_post = cursor.fetchone()
-    #conn.commit()
-    deleted_post = db.exec(select(models.Post).where(models.Post.id == id))
-    result = deleted_post.first()
-
-
-    if result == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
-    db.delete(result)
-    db.commit()
-
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-@app.put("/posts/{id}", response_model=schemas.Post)
-def create_post(id:int, post: schemas.PostCreate, db: Session = Depends(get_db)):
-    #cursor.execute("""UPDATE posts SET name = %s, content=%s, published=%s WHERE id = %s RETURNING *""", (post.title, post.content, post.published, str(id)))
-    #updated_post = cursor.fetchone()
-    #conn.commit()
-    updated_post = db.exec(select(models.Post).where(models.Post.id == id)).first()
-    u_post_data= post.model_dump(exclude_unset=True)
-
-    if updated_post == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
-    
-    for key,value in u_post_data.items():
-        setattr(updated_post, key, value)
-    
-    db.add(updated_post)
-    db.commit()
-    db.refresh(updated_post)
 
 
 
-    return updated_post
-
-@app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserOut)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    #hash the password
-    hashed_password = utils.hash(user.password)
-    user.password = hashed_password
-    
-    new_user=models.User(**user.model_dump())
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-
-    return new_user
-
-@app.get("/users/{id}", response_model=schemas.UserOut)
-def get_user(id:int, db: Session = Depends(get_db) ):
-    user = db.exec(select(models.User).where(models.User.id == id)).first()
-
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with {id} does not exist")
-    return user
