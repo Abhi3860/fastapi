@@ -40,7 +40,7 @@ while True:
         print("Error:", error)
         time.sleep(2)
 
-my_posts = [{"title":"example post","content":"example content","id":1},{"title":"Food, Wonderful Food","Content":"Food is good","id":2}]
+
 
 
 
