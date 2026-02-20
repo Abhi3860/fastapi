@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status, HTTPException, Response
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 from .. import database, schemas, models, utils,oauth2
 from sqlmodel import select
@@ -7,9 +8,9 @@ from sqlmodel import select
 router = APIRouter(tags=['Authentication'])
 
 @router.post('/login')
-def login(user_credentials: schemas.UserLogin, db: Session = Depends(database.get_db)):
+def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     
-    user = db.exec(select(models.User).where(models.User.email == user_credentials.email)).first()
+    user = db.exec(select(models.User).where(models.User.email == user_credentials.username)).first()
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Invalid Credentials")
