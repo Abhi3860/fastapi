@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy import text # We still use text for server_default
 
 
@@ -21,6 +21,10 @@ class Post(SQLModel, table=True):
         default=None, 
         sa_column_kwargs={"server_default": text("now()")}
     )
+
+    owner_id: int = Field(foreign_key="users.id", ondelete="CASCADE")
+    owner : list["User"] = Relationship()
+    
 
 class User(SQLModel, table=True):
     __tablename__="users"

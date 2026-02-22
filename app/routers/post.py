@@ -28,7 +28,7 @@ def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db), curren
     #cursor.execute("""INSERT INTO posts (name, content, published) VALUES (%s,%s,%s) RETURNING *""", (post.title, post.content, post.published))
     #new_post = cursor.fetchone()
     #conn.commit()
-    new_post=models.Post(**post.model_dump())
+    new_post=models.Post(owner_id=current_user.id, **post.model_dump())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -61,6 +61,9 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user:int = Depen
 
     if result == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
+    
+    if result.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not authorized to perform requested action")
     db.delete(result)
     db.commit()
 
@@ -78,6 +81,9 @@ def create_post(id:int, post: schemas.PostCreate, db: Session = Depends(get_db),
     if updated_post == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id: {id} does not exist")
     
+    if updated_post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="not authorized to perform requested action")
+
     for key,value in u_post_data.items():
         setattr(updated_post, key, value)
     
