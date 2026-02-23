@@ -4,7 +4,7 @@ from sqlmodel import Session
 from sqlmodel import SQLModel
 from sqlmodel import select
 from ..database import engine, get_db
-from typing import List
+from typing import List, Optional
 
 
 router = APIRouter(prefix="/posts"
@@ -12,11 +12,11 @@ router = APIRouter(prefix="/posts"
 
 
 @router.get("/", response_model=List[schemas.Post])
-def get_posts(db: Session = Depends(get_db)):
+def get_posts(db: Session = Depends(get_db), limit:int=10, skip:int = 0, search: Optional[str] = ""):
     #cursor.execute("""SELECT * FROM posts""")
     #posts = cursor.fetchall()
 
-    posts = db.exec(select(models.Post)).all()
+    posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
 
     return posts
 
