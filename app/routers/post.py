@@ -2,7 +2,7 @@ from .. import models, schemas, utils, oauth2
 from fastapi import FastAPI, Response,status,HTTPException, Depends, APIRouter
 from sqlmodel import Session
 from sqlmodel import SQLModel
-from sqlmodel import select
+from sqlmodel import select, func
 from ..database import engine, get_db
 from typing import List, Optional
 
@@ -17,6 +17,8 @@ def get_posts(db: Session = Depends(get_db), limit:int=10, skip:int = 0, search:
     #posts = cursor.fetchall()
 
     posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
+    results = db.exec(select(models.Post, func.count(models.Vote.post_id)).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id))
+    
 
     return posts
 
