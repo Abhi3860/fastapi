@@ -26,6 +26,12 @@ class Post(PostBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+class PostOut(Post):
+    
+    votes:int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., max_length=72)

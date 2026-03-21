@@ -11,16 +11,21 @@ router = APIRouter(prefix="/posts"
                    , tags=['Posts'])
 
 
-@router.get("/", response_model=List[schemas.Post])
+@router.get("/", response_model=List[schemas.PostOut])
 def get_posts(db: Session = Depends(get_db), limit:int=10, skip:int = 0, search: Optional[str] = ""):
     #cursor.execute("""SELECT * FROM posts""")
     #posts = cursor.fetchall()
 
-    posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
-    results = db.exec(select(models.Post, func.count(models.Vote.post_id)).join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(models.Post.id))
-    
+    #posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
+    results = db.exec(select(models.Post, func.count(models.Vote.post_id).label("votes"))
+                .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)
+                .where(models.Post.title.contains(search))
+                .group_by(models.Post.id)
+                .limit(limit)
+                .offset(skip)).all()
+    formatted_results = [{**post.model_dump(), "votes": votes, "owner":post.owner} for post, votes in results]
 
-    return posts
+    return formatted_results
 
 
 
