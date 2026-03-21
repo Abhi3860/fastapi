@@ -9,6 +9,9 @@ SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.database_username}:{settings.
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
+
+
+
 #dependency
 def get_db():
     with Session(engine) as session:
