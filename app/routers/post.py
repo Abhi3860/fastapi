@@ -16,7 +16,7 @@ def get_posts(db: Session = Depends(get_db), limit:int=10, skip:int = 0, search:
     #cursor.execute("""SELECT * FROM posts""")
     #posts = cursor.fetchall()
 
-    #posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
+    posts = db.exec(select(models.Post).where(models.Post.title.contains(search)).limit(limit).offset(skip)).all()
     results = db.exec(select(models.Post, func.count(models.Vote.post_id).label("votes"))
                 .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)
                 .where(models.Post.title.contains(search))
@@ -43,18 +43,26 @@ def create_posts(post: schemas.PostCreate, db: Session = Depends(get_db), curren
 
     return new_post
 
-@router.get("/{id}", response_model=schemas.Post) #{id} is called a path parameter
+@router.get("/{id}", response_model=schemas.PostOut) #{id} is called a path parameter
 def get_post(id: int, response: Response,db: Session = Depends(get_db), current_user:int = Depends(oauth2.get_current_user)):
     #cursor.execute("""SELECT * FROM posts WHERE id = %s""",(str(id),))
     #post = cursor.fetchone()
-    post = db.exec(select(models.Post).where(models.Post.id == id)).first()
+    result = db.exec(select(models.Post, func.count(models.Vote.post_id).label("votes"))
+                .join(models.Vote, models.Vote.post_id == models.Post.id, isouter=True)
+                .where(models.Post.id == id)
+                .group_by(models.Post.id)).first()
     #print(current_user.email)
-    if not post:
+    if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"post with id {id} was not found")
         #response.status_code = status.HTTP_404_NOT_FOUND
         #return {"message":f"Post with id {id} was not found"}
-    
-    return post
+    post, votes = result
+    formatted_result = {
+        **post.model_dump(), # or .dict() depending on Pydantic version
+        "votes": votes,
+        "owner": post.owner
+    }
+    return formatted_result
 
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_post(id: int, db: Session = Depends(get_db), current_user:int = Depends(oauth2.get_current_user)):
