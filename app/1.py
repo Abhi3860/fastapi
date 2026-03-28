@@ -5,7 +5,7 @@ from sqlmodel import select
 from .routers import post,user, auth,vote
 from .config import settings
 
-SQLModel.metadata.create_all(engine)
+#SQLModel.metadata.create_all(engine)
 app = FastAPI()
 
 app.include_router(post.router)
