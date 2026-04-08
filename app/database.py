@@ -3,11 +3,11 @@ import psycopg
 from psycopg.rows import dict_row
 import time
 from .config import settings
+import os
 
-
-SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
-
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+#SQLALCHEMY_DATABASE_URL = f"postgresql://{settings.database_username}:{settings.database_password}@{settings.database_hostname}:{settings.database_port}/{settings.database_name}"
+DATABASE_URL = "postgresql://fastapi_db_ls1z_user:zdM8aVwrCZzxLCcjQ6nJLZEGyGaDfF6U@dpg-d7at0ls50q8c73aro31g-a.singapore-postgres.render.com/fastapi_db_ls1z"
+engine = create_engine(DATABASE_URL)
 
 
 
