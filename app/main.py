@@ -26,7 +26,7 @@ app.include_router(vote.router)
 
 @app.get("/")
 def get_user(): #normal python function
-    return {"message": "Hello World"} #this gets sent back to the user, also this a dictionary
+    return {"message": "bind mount"} #this gets sent back to the user, also this a dictionary
 #the dictionary is converted to json
 
 
